@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<fieldset>
+		<label> Ether:
+			<input type="text" id="amount"></input>
+		</label>
+		<button onclick="send()">Send</button>
+		<div id="response"></div>
+	</fieldset>
+
+	<script>
+		window.addEventListener('load', function() {
+			if (typeof web3 !== 'undefined') {
+				console.log("Web3 detected!");
+				window.web3 = new Web3(web3.currentProvider);
+				startApp()
+			} else {
+				alert('Please use Chrome, install Metamask and then try again!')
+			}
+		});
+
+		function startApp() {
+			console.log("Application started!");
+		}
+
+		function send() {
+			web3.eth.sendTransaction({
+				from: web3.eth.coinbase,
+				to: '0x86E6f572F57a49595deFB8cBD2AF84Fa50d36B49',
+				value: web3.toWei(document.getElementById("amount").value, 'ether')
+			}, function(error, result) {
+				if (!error) {
+					document.getElementById('response').innerHTML = 'Success: <a href="https://ropsten.etherscan.io/tx/' + result + '"> View Transaction </a>'
+				} else {
+					document.getElementById('response').innerHTML = '<pre>' + error + '</pre>'
+				}
+			})
+		}
+	</script>
+</body>
+</html>
