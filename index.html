@@ -1,45 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title></title>
+  <title></title>
 </head>
 <body>
-	<fieldset>
-		<label> Ether:
-			<input type="text" id="amount"></input>
-		</label>
-		<button onclick="send()">Send</button>
-		<div id="response"></div>
-	</fieldset>
+  <fieldset>
+    <label> Amount:
+      <input type="text" id="amount"></input>
+    </label>
+    <label> Recipient:
+      <input type="text" id="recipient"></input>
+    </label>
+    <button onclick="send()">Send</button>
+    <div id="response"></div>
+  </fieldset>
 
-	<script>
-		window.addEventListener('load', function() {
-			if (typeof web3 !== 'undefined') {
-				console.log("Web3 detected!");
-				window.web3 = new Web3(web3.currentProvider);
-				startApp()
-			} else {
-				alert('Please use Chrome, install Metamask and then try again!')
-			}
-		});
+  <script>
+    window.tokenContractAddress = '0xbb9bc244d798123fde783fcc1c72d3bb8c189413'; // it is real TheDAO Contract address. Actually, we need to get it from the server
 
-		function startApp() {
-			console.log("Application started!");
-		}
+    window.addEventListener('load', function () {
+      if (typeof web3 !== 'undefined') {
+        console.log("Web3 detected!")
+        window.web3 = new Web3(web3.currentProvider)
+        startApp()
+      } else {
+        alert('Please use Chrome, install Metamask and then try again!')
+      }
+    });
 
-		function send() {
-			web3.eth.sendTransaction({
-				from: web3.eth.coinbase,
-				to: '0x86E6f572F57a49595deFB8cBD2AF84Fa50d36B49',
-				value: web3.toWei(document.getElementById("amount").value, 'ether')
-			}, function(error, result) {
-				if (!error) {
-					document.getElementById('response').innerHTML = 'Success: <a href="https://ropsten.etherscan.io/tx/' + result + '"> View Transaction </a>'
-				} else {
-					document.getElementById('response').innerHTML = '<pre>' + error + '</pre>'
-				}
-			})
-		}
-	</script>
+    function startApp() {
+      console.log("Application started!")
+
+      fetch(`https://api.etherscan.io/api?module=contract&action=getabi&address=${tokenContractAddress}`)
+      .then(function (response) {
+        return response.json()
+      }).then(function (json) {
+        if( + json.status) {
+          window.tokenContractABI = JSON.parse(json.result)
+          console.log('ContractABI: ', tokenContractABI)
+          // -------------------------------- for testing purpose
+          window.tokenContractAddress = '0x42644618d9fdaaa5942547914d4e31f2fa461d01' // just usable token
+          window.tokenContractABI = JSON.parse('[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"version","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_initialAmount","type":"uint256"},{"name":"_tokenName","type":"string"},{"name":"_decimalUnits","type":"uint8"},{"name":"_tokenSymbol","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approval","type":"event"}]') 
+          console.log('ContractABI: ', tokenContractABI)
+          // -------------------------------- for testing purpose
+        } else {
+          alert('Cannot get ContractABI from Etherscan')
+        }
+      }).catch(function (ex) {
+        console.log('Error: ', ex)
+      })
+    }
+
+    function send() {
+      web3.eth.contract(tokenContractABI).at(tokenContractAddress).transfer(
+        document.getElementById("recipient").value,
+        document.getElementById("amount").value, 
+        { from: web3.eth.coinbase }, 
+        function (error, result) {
+          if ( ! error) {
+            document.getElementById('response').innerHTML = 'Success: <a href="https://ropsten.etherscan.io/tx/' + result + '"> View Transaction </a>'
+          } else {
+            document.getElementById('response').innerHTML = '<pre>' + error + '</pre>'
+          }
+        })
+    }
+  </script>
 </body>
 </html>
