@@ -18,17 +18,17 @@ function EtherscanProvider(etherscanPrefix, apiKey) {
     })
   }
 
-  function getTransactionByHash (tx) {
+  function getTransactionByHash (transactionHash) {
     return new Promise((resolve, reject) => {
       const url = getUrl()
-      + `&module=proxy&action=eth_getTransactionByHash&txhash=${tx}`
+      + `&module=proxy&action=eth_getTransactionByHash&txhash=${transactionHash}`
 
       request(url, (err, res, body) => {
         if (err) {
           return reject(err)
         }
 
-        resolve(JSON.parse(body))
+        resolve(JSON.parse(body).result)
       })
     })
   }

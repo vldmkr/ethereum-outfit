@@ -1,6 +1,5 @@
-var keccak256 = require('./keccak');
 
-function NaiveHelper () {
+function Web3Helper (web3) {
 
   const _methodIdBound = 2 + 4 * 2; // 0x + 4 bytes
 
@@ -9,12 +8,7 @@ function NaiveHelper () {
   }
 
   function getMethodId (methodABI) {
-    const inputs = methodABI.inputs.map(element => element.type )
-
-    const methodSignature = [methodABI.name, '(', inputs.join(','), ')'].join('')
-    const methodHash = '0x' + keccak256(methodSignature)
-
-    return methodHash.substring(0, _methodIdBound)
+    return web3.eth.abi.encodeFunctionSignature(methodABI)
   }
 
   function parseTxInput (input) {
@@ -27,12 +21,13 @@ function NaiveHelper () {
 
   function createCallInfo (methodABI, txInput) {
     if(getMethodId(methodABI) === txInput.methodId) {
+      const decoded = web3.eth.abi.decodeParameters(methodABI.inputs, txInput.input)
       return {
         name: methodABI.name,
         methodId: txInput.methodId,
         inputs: methodABI.inputs.map((element, index) => {
           const newElement = Object.assign({}, element)
-          newElement.value = normalizeValue(txInput.inputs[index], element.type)
+          newElement.value = decoded[element.name]
           return newElement
         })
       }
@@ -40,14 +35,6 @@ function NaiveHelper () {
     return null
   }
 
-  function normalizeValue (value, type) {
-    switch(type) {
-      case 'address': return '0x' + value.slice(-40)
-      case 'uint256': return parseInt(value, 16).toString()
-      default: return value
-    }
-  }
-  
   return {
     getMethodABI: getMethodABI,
     getMethodId: getMethodId,
@@ -56,4 +43,4 @@ function NaiveHelper () {
   }
 }
 
-module.exports = NaiveHelper
+module.exports = Web3Helper

@@ -1,17 +1,19 @@
 var path = require('path');
 var express = require('express');
 var request = require('request');
-var Web3 = require('web3');
 
 var keccak256 = require('./keccak');
 var EtherscanProvider = require('./EtherscanProvider');
+var Web3Provider = require('./Web3Provider');
 var ContractsCompiler = require('./ContractsCompiler');
 var NaiveHelper = require('./NaiveHelper')
+var Web3Helper = require('./Web3Helper')
 
-var web3 = new Web3()
-var provider = EtherscanProvider('api', 'YourApiKeyToken');
+var provider1 = EtherscanProvider('api', 'YourApiKeyToken');
+var provider = Web3Provider('https://mainnet.infura.io/');
 var compiler = ContractsCompiler(path.join(__dirname, 'contracts'))
-var helper = NaiveHelper();
+// var helper = NaiveHelper();
+var helper = Web3Helper(provider.web3)
 var app = express();
 
 compiler.compile()
@@ -33,7 +35,7 @@ app.get('/contract', function (req, res) {
     var transferABI = helper.getMethodABI(contractABI, 'transfer')
     console.log('methodABI:', transferABI);
     console.log('methodId:', helper.getMethodId(transferABI));
-    console.log('encodeFunctionSignature:', web3.eth.abi.encodeFunctionSignature(transferABI));
+    console.log('encodeFunctionSignature:', Web3.eth.abi.encodeFunctionSignature(transferABI));
     res.send(transferABI);
   }).catch((reason) => {
     console.log('Error: ' + reason);
@@ -42,9 +44,10 @@ app.get('/contract', function (req, res) {
 })
 
 app.get('/tx', function (req, res) {
-  provider.getTransactionByHash('0x54c02aa1d5b4e5dfa1f32b7861362a132945774802416e207a455127188f5189')
+  provider.getTransactionByHash('0x4cfa36eae29344e6aa285e139889ba2050a6c2b9ada097bf2d899f18076ca169')
   .then(transaction => {
-    var txInput = helper.parseTxInput(transaction.result.input)
+    console.log(transaction);
+    var txInput = helper.parseTxInput(transaction.input)
     console.log(txInput);
     res.send(txInput);
   }).catch((reason) => {
@@ -54,12 +57,12 @@ app.get('/tx', function (req, res) {
 })
 
 app.get('/call', function (req, res) {
-  provider.getContractABI('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413')
+  provider1.getContractABI('0xBB9bc244D798123fDe783fCc1C72d3Bb8C189413')
   .then(contractABI => {
     var transferABI = helper.getMethodABI(contractABI, 'transfer')
-    return provider.getTransactionByHash('0x54c02aa1d5b4e5dfa1f32b7861362a132945774802416e207a455127188f5189')
+    return provider.getTransactionByHash('0x4cfa36eae29344e6aa285e139889ba2050a6c2b9ada097bf2d899f18076ca169')
     .then(transaction => {
-      var callInfo = helper.createCallInfo(transferABI, helper.parseTxInput(transaction.result.input))
+      var callInfo = helper.createCallInfo(transferABI, helper.parseTxInput(transaction.input))
       console.log(callInfo);
       return res.send(callInfo);
     })
