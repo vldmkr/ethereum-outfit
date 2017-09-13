@@ -1,19 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title></title>
+  <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-exp.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-icons.min.css">
+
+  <title>ERC20</title>
 </head>
 <body>
-  <fieldset>
-    <label> Amount:
-      <input type="text" id="amount"></input>
-    </label>
-    <label> Recipient:
-      <input type="text" id="recipient"></input>
-    </label>
-    <button onclick="send()">Send</button>
-    <div id="response"></div>
-  </fieldset>
+
+  <div class="container" style="margin-top: 30px">
+    <div class="columns">
+      <div class="column col-4 col-mx-auto">
+        <div class="panel">
+          <div class="panel-nav">
+            <ul class="tab tab-block">
+              <li class="tab-item">
+                <a href="#send" id="send-ref">Send</a>
+              </li>
+              <li class="tab-item">
+                <a href="#claim" id="claim-ref">Claim</a>
+              </ul>
+            </div>
+            <div class="panel-body" id="tx-list">
+              <div class="tile tile-centered" style="margin-top: 15px">
+                <div class="tile-content">
+                  <div class="tile-title">Token Address</div>
+                  <a href="https://ropsten.etherscan.io/token/0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86" class="tile-subtitle">0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86</a>
+                </div>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <div class="divider"></div>
+              <div class="form-group" style="display:none" id="send-form">
+                <label class="form-label" for="input-recipient">Recipient</label>
+                <input class="form-input" type="text" id="input-recipient" placeholder="Recipient">
+                <label class="form-label" for="input-amount">Amount</label>
+                <input class="form-input" type="text" id="input-amount" placeholder="Amount">
+                <button class="btn btn-primary btn-block" style="margin-top: 12px" onclick="send()">Send</button>
+              </div>
+              <div class="form-group" style="display:none" id="claim-form">
+                <label class="form-label" for="input-claim">Recipient</label>
+                <input class="form-input" type="text" id="input-claim" placeholder="Recipient">
+                <button class="btn btn-primary btn-block" style="margin-top: 12px" onclick="claim()">Claim</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     window.tokenContractAddress = '0xbb9bc244d798123fde783fcc1c72d3bb8c189413'; // it is real TheDAO Contract address. Actually, we need to get it from the server
@@ -39,8 +75,8 @@
           window.tokenContractABI = JSON.parse(json.result)
           console.log('ContractABI: ', tokenContractABI)
           // -------------------------------- for testing purpose
-          window.tokenContractAddress = '0x42644618d9fdaaa5942547914d4e31f2fa461d01' // just usable token
-          window.tokenContractABI = JSON.parse('[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"version","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_initialAmount","type":"uint256"},{"name":"_tokenName","type":"string"},{"name":"_decimalUnits","type":"uint8"},{"name":"_tokenSymbol","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approval","type":"event"}]') 
+          window.tokenContractAddress = '0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86' // claimable token
+          window.tokenContractABI = JSON.parse('[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"claim","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"version","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_initialAmount","type":"uint256"},{"name":"_tokenName","type":"string"},{"name":"_decimalUnits","type":"uint8"},{"name":"_tokenSymbol","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Approval","type":"event"}]') 
           console.log('ContractABI: ', tokenContractABI)
           // -------------------------------- for testing purpose
         } else {
@@ -53,8 +89,8 @@
 
     function send() {
       web3.eth.contract(tokenContractABI).at(tokenContractAddress).transfer(
-        document.getElementById("recipient").value,
-        document.getElementById("amount").value, 
+        document.getElementById("input-recipient").value,
+        document.getElementById("input-amount").value, 
         { from: web3.eth.coinbase }, 
         function (error, result) {
           if ( ! error) {
@@ -64,6 +100,61 @@
           }
         })
     }
+
+    function claim() {
+      web3.eth.contract(tokenContractABI).at(tokenContractAddress).claim(
+        { from: web3.eth.coinbase }, 
+        function (error, result) {
+          if ( ! error) {
+            document.getElementById('tx-list').innerHTML = 'Success: <a href="https://ropsten.etherscan.io/tx/' + result + '"> View Transaction </a>'
+          } else {
+            document.getElementById('tx-list').innerHTML = '<pre>' + error + '</pre>'
+          }
+        })
+    }
+
+    (function () {
+      var routes = {};
+      var prevRoute = null;
+
+      this.route = function (path, controller) {
+        routes[path] = { controller: controller }
+      }
+
+      function router () {
+        var url = location.hash.slice(1);
+        if(! url) {
+          window.location.hash = Object.keys(routes)[0] || ''
+          return
+        }
+        var curRoute = routes[url];
+        if (curRoute && curRoute.controller) {
+          curRoute.controller(true)
+          if(prevRoute && prevRoute.controller) {
+            prevRoute.controller(false)
+          }
+          prevRoute = curRoute
+        }
+      }
+
+      window.addEventListener('hashchange', router);
+      window.addEventListener('load', router);
+    })()
+
+
+  </script>
+
+
+  <script>
+    route('send', function (isActive) {
+      document.getElementById('send-form').style.display = isActive ? 'block' : 'none'
+      document.getElementById('send-ref').className = isActive ? 'active' : ''
+    });
+
+    route('claim', function (isActive) {
+      document.getElementById('claim-form').style.display = isActive ? 'block' : 'none'
+      document.getElementById('claim-ref').className = isActive ? 'active' : ''
+    });
   </script>
 </body>
 </html>

@@ -17,10 +17,19 @@ contract UsableToken is BaseToken {
         uint8 _decimalUnits,
         string _tokenSymbol
         ) {
-        balances[msg.sender] = _initialAmount;
+        balances[this] = _initialAmount;
         totalSupply = _initialAmount;
         name = _tokenName;
         decimals = _decimalUnits;
         symbol = _tokenSymbol;
     }
+    
+    function claim() returns (bool success) {
+        require(balances[msg.sender] < balances[this] / 1000);
+        uint256 value = balances[this] / 10000;
+        balances[msg.sender] += value;
+        balances[this] -= value;
+        Transfer(this, msg.sender, value);
+        return true;
+    } 
 }
