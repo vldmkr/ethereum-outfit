@@ -2,12 +2,12 @@ var path = require('path');
 var express = require('express');
 var request = require('request');
 
-var keccak256 = require('./keccak');
-var EtherscanProvider = require('./EtherscanProvider');
-var Web3Provider = require('./Web3Provider');
-var ContractsCompiler = require('./ContractsCompiler');
-var NaiveHelper = require('./NaiveHelper')
-var Web3Helper = require('./Web3Helper')
+var keccak256 = require('./lib/keccak');
+var EtherscanProvider = require('./lib/EtherscanProvider');
+var Web3Provider = require('./lib/Web3Provider');
+var ContractsCompiler = require('./lib/ContractsCompiler');
+var NaiveHelper = require('./lib/NaiveHelper')
+var Web3Helper = require('./lib/Web3Helper')
 
 var provider1 = EtherscanProvider('api', 'YourApiKeyToken');
 var provider = Web3Provider('https://mainnet.infura.io/');
