@@ -8,7 +8,7 @@
 
   function router () {
     var url = location.hash.slice(1)
-    if(! url) {
+    if( ! url) {
       window.location.hash = Object.keys(routes)[0] || ''
       return
     }

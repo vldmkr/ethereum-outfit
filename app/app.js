@@ -20,6 +20,10 @@ document.getElementById('tx-list').innerHTML += template.txItem({
   subtitle: token.contractAddress
 })
 
+document.body.innerHTML += template.forkMe({ 
+  url: 'https://github.com/vldmkr/erc20-token-boilerplate'
+})
+
 document.getElementById('btn-send').onclick = function () {
   web3.eth.contract(token.contractABI).at(token.contractAddress).transfer(
     document.getElementById("input-recipient").value,
