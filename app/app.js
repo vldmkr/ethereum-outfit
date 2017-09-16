@@ -1,38 +1,41 @@
 (function () {
+  window.App = window.App || {} 
   var items = []
 
-  this.deserializeItems = function () {
+  App.restoreItemsFromStorage = function () {
     items = JSON.parse(localStorage.getItem('items')) || []
-    items.forEach(function(item) {
-      drawItem(item.title, item.url, item.subtitle, true)
+    items.forEach(function (item) {
+      App.drawItem.apply(this, Object.values(item))
     });
   }
 
-  this.serializeItems = function () {
-    localStorage.setItem('items', JSON.stringify(items))
-  }
-
-  this.drawItem = function (title, url, subtitle, ignore) {
+  App.drawItem = function (title, url, subtitle) {
     var item = { 
       title: title, 
       url: url, 
       subtitle: subtitle
     }
     document.getElementById('tx-list').innerHTML += template.txItem(item)
-    if( ! ignore) {
-      items.push(item)
-      serializeItems()
+    return {
+      toStorage: function () {
+        items.push(item)
+        localStorage.setItem('items', JSON.stringify(items))
+      }
     }
   }
 })()
 
 window.addEventListener('load', function () {
-  deserializeItems()
-  if (typeof web3 !== 'undefined') {
+  App.restoreItemsFromStorage()
+  if (web3 !== undefined) {
     window.web3 = new Web3(web3.currentProvider)
     web3.net.getListening( function(error, result) { 
       if( ! error && result) {
-        document.getElementById('input-claim').placeholder = web3.eth.defaultAccount
+        if(web3.eth.defaultAccount !== undefined) {
+          document.getElementById('input-claim').placeholder = web3.eth.defaultAccount
+        } else {
+          document.getElementById('error-label').innerHTML = template.errorLabel({ text: 'Please unlock Metamask and refresh the page!' })
+        }
       }
     })
   } else {
@@ -46,38 +49,38 @@ document.body.innerHTML += template.forkMe({
   url: 'https://github.com/vldmkr/erc20-token-boilerplate'
 })
 
-document.getElementById('btn-send').onclick = function () {
+document.getElementById('btn-send').addEventListener('click', function () {
   web3.eth.contract(token.contractABI).at(token.contractAddress).transfer(
     document.getElementById("input-recipient").value,
     document.getElementById("input-amount").value,
     function (error, result) {
       if ( ! error) {
-        drawItem('Send', 'https://ropsten.etherscan.io/tx/' + result, result)
+        App.drawItem('Send', 'https://ropsten.etherscan.io/tx/' + result, result).toStorage()
       } else {
-        drawItem('Send', '#send', error.message.split('\n')[0])
+        App.drawItem('Send', '#send', error.message.split('\n')[0])
       }
     })
-}
+})
 
-document.getElementById('btn-claim').onclick = function () {
+document.getElementById('btn-claim').addEventListener('click', function () {
   web3.eth.contract(token.contractABI).at(token.contractAddress).claim(
     function (error, result) {
       if ( ! error) {
-        drawItem('Claim', 'https://ropsten.etherscan.io/tx/' + result, result)
+        App.drawItem('Claim', 'https://ropsten.etherscan.io/tx/' + result, result).toStorage()
       } else {
-        drawItem('Claim', '#claim', error.message.split('\n')[0])
+        App.drawItem('Claim', '#claim', error.message.split('\n')[0])
       }
     })
-}
+})
 
-drawItem('Token Address', 'https://ropsten.etherscan.io/token/' + token.contractAddress, token.contractAddress, true)
+App.drawItem('Token Address', 'https://ropsten.etherscan.io/token/' + token.contractAddress, token.contractAddress)
 
-route('send', function (isActive) {
+window.route('send', function (isActive) {
   document.getElementById('send-form').style.display = isActive ? 'block' : 'none'
   document.getElementById('send-ref').className = isActive ? 'active' : ''
 })
 
-route('claim', function (isActive) {
+window.route('claim', function (isActive) {
   document.getElementById('claim-form').style.display = isActive ? 'block' : 'none'
   document.getElementById('claim-ref').className = isActive ? 'active' : ''
 })

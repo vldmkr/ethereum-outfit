@@ -1,6 +1,7 @@
 // nice http://javascript.crockford.com/remedial.html
+// JavaScript Micro-Templating https://johnresig.com/blog/javascript-micro-templating/
 
-this.template = {
+window.template = {
   txItem: function (params) {
     return `<div class="tile tile-centered" style="margin-top: 15px">
               <div class="tile-content">
