@@ -5,7 +5,7 @@
   App.restoreItemsFromStorage = function () {
     items = JSON.parse(localStorage.getItem('items')) || []
     items.forEach(function (item) {
-      App.drawItem.apply(this, Object.values(item))
+      App.drawItem(item.title, item.url, item.subtitle)
     });
   }
 
@@ -27,22 +27,26 @@
 
 window.addEventListener('load', function () {
   App.restoreItemsFromStorage()
-  if (web3 !== undefined) {
+  if (typeof web3 !== 'undefined') {
     window.web3 = new Web3(web3.currentProvider)
     web3.net.getListening( function(error, result) { 
       if( ! error && result) {
-        if(web3.eth.defaultAccount !== undefined) {
+        if(typeof web3.eth.defaultAccount !== 'undefined') {
           document.getElementById('input-claim').placeholder = web3.eth.defaultAccount
         } else {
-          document.getElementById('error-label').innerHTML = template.errorLabel({ text: 'Please unlock Metamask and refresh the page!' })
+          showError('Please unlock Metamask and refresh the page!')
         }
       }
     })
   } else {
-    document.getElementById('error-label').innerHTML = template.errorLabel({ text: 'Please use Chrome, install Metamask and then try again!' })
+    showError('Please use Chrome, install Metamask and then try again!')
+  }
+
+  function showError (msg) {
+    document.getElementById('error-label').innerHTML = template.errorLabel({ text: msg })
     document.getElementById('btn-send').disabled = true
     document.getElementById('btn-claim').disabled = true
-  }
+  } 
 });
 
 document.body.innerHTML += template.forkMe({ 
