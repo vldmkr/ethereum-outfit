@@ -1,0 +1,126 @@
+pragma solidity ^0.4.16;
+
+import "./Destructible.sol";
+import "./BaseToken.sol";
+
+contract GenCrowdsale is Destructible, BaseToken {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    string public name = "${name}";                                     // "GenToken";
+    string public symbol = "${symbol}";                                 // "GEN"
+    uint8 public decimals = ${decimals};                                // 3
+    
+    uint public basePriceOfToken = ${basePriceOfToken} ether;           // 0.001
+    uint public salePeriod = ${salePeriod} minutes;                     // 1
+    uint public fundingGoal = ${fundingGoal} ether;                     // 20
+    uint public minimalInvestment = ${minimalInvestment} ether;         // 0.1
+    uint public bonusUpperLimitDays = ${bonusUpperLimitDays} minutes;   // 5
+    uint public bonusRate = ${bonusRate};                               // 150
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    string public version = '0.1';
+    
+    uint public totalAmountRaised = 0;
+    mapping(address => uint256) public ethBalanceOf;
+    
+    event Mint(address indexed _to, uint256 _amount);
+    event FundTransfer (address _backer, uint _amount, bool _isContribution);
+
+// StateMachine <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    enum Stages {
+        NotStarted,
+        InProgress,
+        Finished
+    }
+
+    uint startTime = 0;                   // public for dev
+    Stages stage = Stages.NotStarted;     // public for dev
+
+    modifier atStage (Stages _stage) {
+        require(stage == _stage);
+        _;
+    }
+    
+    modifier transitionNext () {
+        _;
+        stage = Stages(uint(stage) + 1);
+    }
+    
+    modifier timedTransitions () {
+        require(stage > Stages.NotStarted);
+        uint diff = now - startTime;
+        if (diff >= salePeriod && stage != Stages.Finished) {
+            stage = Stages.Finished;
+        }
+        _;
+    }
+// StateMachine >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+
+    function GenCrowdsale ()
+    transitionNext 
+    {
+        startTime = now;
+    }
+
+    function () public payable 
+    timedTransitions 
+    atStage(Stages.InProgress) 
+    {
+        uint amount = msg.value;
+        require(amount >= minimalInvestment);
+        
+        address to = msg.sender;
+        uint tokenAmount = calculateBonusAt(now, amount) / basePriceOfToken;
+        
+        totalAmountRaised += amount;
+        ethBalanceOf[msg.sender] += amount;
+        
+        totalSupply += tokenAmount;
+        balances[to] += tokenAmount;
+        
+        FundTransfer(msg.sender, amount, true);
+        Mint(to, tokenAmount);
+        Transfer(0x0, to, tokenAmount);
+    }
+
+    function calculateBonusAt (uint256 _at, uint256 _amount) internal constant returns (uint256) {
+        if(_at - startTime < bonusUpperLimitDays) {
+            return _amount * bonusRate / 100;
+        }
+        return _amount;
+    }
+    
+    function minutesToEnd () public constant returns (uint _time) {
+        require(stage > Stages.NotStarted && stage < Stages.Finished);
+        uint endTime = startTime + salePeriod;
+        uint toEndTime = endTime - now;
+        return toEndTime <= salePeriod ? toEndTime / 1 minutes : 0;
+    }
+    
+    function currentBalance () constant returns (uint _balance) {
+        return this.balance;
+    }
+    
+    function isGoalReached() constant returns (bool _isReached) {
+        return totalAmountRaised >= fundingGoal;
+    }
+    
+    function safeWithdrawal ()
+    timedTransitions
+    atStage(Stages.Finished)
+    {
+        if (isGoalReached() && owner == msg.sender) {
+            uint amountRaised = this.balance;
+            owner.transfer(amountRaised);
+
+            FundTransfer(owner, amountRaised, false);
+        }
+        
+        if( ! isGoalReached()) {
+            uint amount = ethBalanceOf[msg.sender];
+            require(amount > 0);
+            msg.sender.transfer(amount);
+            
+            FundTransfer(msg.sender, amount, false);
+        }
+    }
+}
