@@ -6,43 +6,12 @@ const account = require('./account')
 
 const Web3Provider = require('./lib/Web3Provider')
 const ContractsCompiler = require('./lib/ContractsCompiler')
+const WorkingQueue = require('./lib/WorkingQueue')
 
-const app = express();
-const web3 = Web3Provider().web3;
+const app = express()
+const web3 = Web3Provider().web3
 const compiler = ContractsCompiler(path.join(__dirname, 'contracts'))
-const requestQueue = makeQueue();
-
-function makeQueue () {
-  const queue = []
-  var cur = null
-
-  function push (obj) {
-    queue.push(obj)
-  }
-
-  function shift () {
-    if ( ! cur) {
-      cur = queue.shift() || null
-      return cur
-    }
-    return null
-  }
-
-  function done () {
-    cur = null
-  }
-
-  function current () {
-    return cur;
-  }
-
-  return {
-    push: push,
-    shift: shift,
-    done: done,
-    current: current
-  }
-}
+const requestQueue = WorkingQueue()
 
 app.use(bodyParser.json());
 web3.eth.accounts.wallet.add(account.privateKey)
@@ -51,7 +20,10 @@ app.post('/api/v1/eth/publish', function (req, res) {
   res.send('OK')
   console.log(req.body); 
 
-  requestQueue.push(req.body)
+  if (requestQueue.push(req.body) === 1) {
+    requestQueue.watchDogForNext(100000)
+    console.log("First")
+  }
 })
 
 function doWork (params) {
@@ -62,33 +34,48 @@ function doWork (params) {
       "userId": params.userId,
       "ropstenPrivateKey": account.privateKey,
       "accountAddress": account.address,
-      "tx": "https://ropsten.etherscan.io/address/" + account.address,
+      "tx": null,
+      "contract": null,
       "error": null
     }
   }
 
-  compiler.deploy(web3, account.address, "GenCrowdsale.sol:GenCrowdsale", params)
-  .then(transactionHash => {
-    console.log(transactionHash)
-    options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
+  function doRequest (options, moveNext) {
+    moveNext && requestQueue.next()
+    requestQueue.watchDogForNext(60000)
 
-    doRequest(options)
-  })
-  .catch(reason => {
-    console.log(reason);
+    request(options, (err, res, body) => {
+      if ( ! err && res.statusCode == 200) {
+        console.log(body)
+      }
+    })
+  }
+
+  function doErrorRequest (reason) {
+    console.log("Catched: " + reason);
     options.json["error"] = reason.message
 
-    doRequest(options)
+    doRequest(options, false)
+  }
+
+  compiler.deploy(web3, account.address, "GenCrowdsale.sol:GenCrowdsale", params)
+  .then(emiter => {
+    emiter.on('transactionHash', transactionHash => {
+      options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
+      doRequest(options)
+    })
+
+    emiter.on('receipt', receipt => {
+      options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
+      doRequest(options, true)
+    })
+
+    emiter.on('error', error => {
+      doErrorRequest(error)
+    })
   })
-}
-
-function doRequest (options) {
-  setTimeout(() => { requestQueue.done() }, 35000)
-
-  request(options, function (err, res, body) {
-    if ( ! err && res.statusCode == 200) {
-      console.log(body)
-    }
+  .catch(reason => {
+    doErrorRequest(reason)
   })
 }
 
@@ -96,8 +83,4 @@ const listener = app.listen(9090, function () {
   console.log('Server listening on port ' + listener.address().port)
 })
 
-setInterval(() => {
-  if (requestQueue.shift()) {
-    doWork(requestQueue.current())
-  }
-}, 3000)
+requestQueue.start(doWork, 3000)
