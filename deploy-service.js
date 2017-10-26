@@ -60,7 +60,7 @@ function doWork (params) {
     doRequest(options, false)
   }
 
-  compiler.compile(params)
+  compiler.compile({ "GenCrowdsale.sol": params })
   .then(output => outfit.deploy(output.contracts["GenCrowdsale.sol:GenCrowdsale"], account.address))
   .then(emiter => {
     emiter.on('transactionHash', transactionHash => {
