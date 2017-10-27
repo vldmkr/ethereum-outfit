@@ -60,23 +60,29 @@ function doWork (params) {
     doRequest(options, false)
   }
 
-  compiler.compile({ "GenCrowdsale.sol": params })
-  .then(output => outfit.deploy(output.contracts["GenCrowdsale.sol:GenCrowdsale"], account.address))
-  .then(emiter => {
-    emiter.on('transactionHash', transactionHash => {
-      options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
-      doRequest(options)
-    })
-
-    emiter.on('receipt', receipt => {
-      options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
-      doRequest(options, true)
-    })
-
-    emiter.on('error', error => {
-      doErrorRequest(error)
-    })
+  compiler.compile()
+  .then(output => {
+    const contract = {
+      address: "0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86",
+      abi: JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
+    }
+    return outfit.call(contract, null, account.address) 
   })
+  // .then(emiter => {
+  //   emiter.on('transactionHash', transactionHash => {
+  //     options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
+  //     doRequest(options)
+  //   })
+
+  //   emiter.on('receipt', receipt => {
+  //     options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
+  //     doRequest(options, true)
+  //   })
+
+  //   emiter.on('error', error => {
+  //     doErrorRequest(error)
+  //   })
+  // })
   .catch(reason => {
     doErrorRequest(reason)
   })
