@@ -42,7 +42,7 @@ function doWork (params) {
     }
   }
 
-  function doRequest (options, moveNext) {
+  function doRequest (moveNext) {
     moveNext && requestQueue.next()
     requestQueue.watchDogForNext(60000)
 
@@ -57,7 +57,7 @@ function doWork (params) {
     console.log("Catched: " + reason);
     options.json["error"] = reason.message
 
-    doRequest(options, false)
+    doRequest(false)
   }
 
   compiler.compile()
@@ -66,23 +66,29 @@ function doWork (params) {
       address: "0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86",
       abi: JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
     }
-    return outfit.call(contract, null, account.address) 
+    const method = {
+      name: "claim",
+      params: []
+    }
+    return outfit.methodSend(account.address, contract, method)
+    // return outfit.deploy(account.address, output.contracts["UsableToken.sol:UsableToken"], [100000, "asd", 3, "ASD"]) 
   })
-  // .then(emiter => {
-  //   emiter.on('transactionHash', transactionHash => {
-  //     options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
-  //     doRequest(options)
-  //   })
+  .then(emiter => {
+    emiter.on('transactionHash', transactionHash => {
+      options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
+      doRequest()
+    })
 
-  //   emiter.on('receipt', receipt => {
-  //     options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
-  //     doRequest(options, true)
-  //   })
+    emiter.on('receipt', receipt => {
+      console.log(receipt)
+      options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
+      doRequest(true)
+    })
 
-  //   emiter.on('error', error => {
-  //     doErrorRequest(error)
-  //   })
-  // })
+    emiter.on('error', error => {
+      doErrorRequest(error)
+    })
+  })
   .catch(reason => {
     doErrorRequest(reason)
   })
