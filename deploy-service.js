@@ -60,19 +60,8 @@ function doWork (params) {
     doRequest(false)
   }
 
-  compiler.compile()
-  .then(output => {
-    const contract = {
-      address: "0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86",
-      abi: JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
-    }
-    const method = {
-      name: "balanceOf",
-      params: ["0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86"]
-    }
-    return outfit.call(account.address, contract, method)
-    // return outfit.deploy(account.address, output.contracts["UsableToken.sol:UsableToken"], [100000, "asd", 3, "ASD"]) 
-  })
+  compiler.compile({ "GenCrowdsale.sol": params })
+  .then(output => outfit.deploy(account.address, output.contracts["GenCrowdsale.sol:GenCrowdsale"]))
   .then(emiter => {
     emiter.on('transactionHash', transactionHash => {
       options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
@@ -81,9 +70,6 @@ function doWork (params) {
     .on('receipt', receipt => {
       options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
       doRequest(true)
-    })
-    .on('call', result => {
-      console.log(result)
     })
     .on('error', error => {
       doErrorRequest(error)
