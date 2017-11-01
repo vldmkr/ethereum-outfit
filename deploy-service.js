@@ -67,10 +67,10 @@ function doWork (params) {
       abi: JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
     }
     const method = {
-      name: "claim",
-      params: []
+      name: "balanceOf",
+      params: ["0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86"]
     }
-    return outfit.methodSend(account.address, contract, method)
+    return outfit.call(account.address, contract, method)
     // return outfit.deploy(account.address, output.contracts["UsableToken.sol:UsableToken"], [100000, "asd", 3, "ASD"]) 
   })
   .then(emiter => {
@@ -78,14 +78,14 @@ function doWork (params) {
       options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transactionHash
       doRequest()
     })
-
-    emiter.on('receipt', receipt => {
-      console.log(receipt)
+    .on('receipt', receipt => {
       options.json["contract"] = "https://ropsten.etherscan.io/contract/" + receipt.contractAddress
       doRequest(true)
     })
-
-    emiter.on('error', error => {
+    .on('call', result => {
+      console.log(result)
+    })
+    .on('error', error => {
       doErrorRequest(error)
     })
   })
