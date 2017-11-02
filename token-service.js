@@ -26,12 +26,7 @@ const contract = {
   abi: null
 }
 
-const method = {
-  name: "transfer",
-  params: null
-}
-
-app.post(`/api/v1/eth/method/${method.name}`, function (req, res) {
+app.post('/api/v1/eth/method/transfer', function (req, res) {
   res.send('OK')
   console.log(req.body); 
 
@@ -41,17 +36,48 @@ app.post(`/api/v1/eth/method/${method.name}`, function (req, res) {
   }
 })
 
+app.post('/api/v1/eth/method/balanceOf', function (req, res) {
+  console.log(req.body);
+
+  const methodBalanceOf = {
+    name: "balanceOf",
+    params: [ req.body.address ]
+  }
+
+  const json = {
+    requestId: req.body.requestId,
+    address: req.body.address,
+    result: null,
+    error: null
+  }
+
+  outfit.call(account.address, contract, methodBalanceOf)
+  .then(emiter => {
+    emiter
+    .on('call', result => {
+      json["result"] = parseInt(result)
+      res.send(json)
+    })
+    .on('error', error => {
+      json["error"] = error
+      res.send(json)
+    })
+  })
+})
+
 function doWork (params) {
-  method.params = params.params
+  const methodTransfer = {
+    name: "transfer",
+    params: [ params.address, params.value ]
+  }
 
   const options = {
     uri: 'http://localhost:9080/api/response/method',
     method: 'POST',
     json: {
-      "userId": params.userId,
-      "ropstenPrivateKey": account.privateKey,
-      "accountAddress": account.address,
-      "result": null,
+      "requestId": params.requestId,
+      "address": null,
+      "value": null,
       "tx": null,
       "error": null
     }
@@ -62,7 +88,7 @@ function doWork (params) {
     requestQueue.watchDogForNext(60000)
 
     request(options, (err, res, body) => {
-      if ( ! err && res.statusCode == 200) {
+      if ( ! err && res.statusCode === 200) {
         console.log(body)
       }
     })
@@ -75,11 +101,7 @@ function doWork (params) {
     doRequest(false)
   }
 
-  compiler.compile()
-  .then(output => {
-    contract.abi = JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
-    return outfit.call(account.address, contract, method)
-  })
+  outfit.call(account.address, contract, methodTransfer)
   .then(emiter => {
     return new Promise((resolve, reject) => {
       emiter
@@ -93,8 +115,9 @@ function doWork (params) {
     const callInfo = helper.createCallInfo(transferABI, helper.parseTxInput(transaction.input))
 
     options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transaction.hash
-    options.json["result"] = callInfo
-    
+    options.json["value"] = parseInt(callInfo.inputs.find(element => element.name === '_value').value)
+    options.json["address"] = callInfo.inputs.find(element => element.name === '_to').value
+
     doRequest(true)
   })
   .catch(reason => doErrorRequest(reason))
@@ -105,3 +128,9 @@ const listener = app.listen(9090, function () {
 })
 
 requestQueue.start(doWork, 3000)
+
+compiler.compile()
+.then(output => {
+  contract.abi = JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
+  console.log("Contracts compiled. Let's Rock!")
+})

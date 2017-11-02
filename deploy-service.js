@@ -47,7 +47,7 @@ function doWork (params) {
     requestQueue.watchDogForNext(60000)
 
     request(options, (err, res, body) => {
-      if ( ! err && res.statusCode == 200) {
+      if ( ! err && res.statusCode === 200) {
         console.log(body)
       }
     })

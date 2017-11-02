@@ -30,7 +30,7 @@ app.get('/testpublish', function(req, res) {
   }
 
   request(options, function (err, res, body) {
-    if ( ! err && res.statusCode == 200) {
+    if ( ! err && res.statusCode === 200) {
       console.log(body)
     }
   })
