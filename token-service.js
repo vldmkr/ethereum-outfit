@@ -21,7 +21,17 @@ const requestQueue = WorkingQueue()
 app.use(bodyParser.json());
 web3.eth.accounts.wallet.add(account.privateKey)
 
-app.post('/api/v1/eth/publish', function (req, res) {
+const contract = {
+  address: "0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86",
+  abi: null
+}
+
+const method = {
+  name: "transfer",
+  params: null
+}
+
+app.post(`/api/v1/eth/method/${method.name}`, function (req, res) {
   res.send('OK')
   console.log(req.body); 
 
@@ -32,15 +42,17 @@ app.post('/api/v1/eth/publish', function (req, res) {
 })
 
 function doWork (params) {
+  method.params = params.params
+
   const options = {
-    uri: 'http://localhost:9080/api/sc/publishresult',
+    uri: 'http://localhost:9080/api/response/method',
     method: 'POST',
     json: {
       "userId": params.userId,
       "ropstenPrivateKey": account.privateKey,
       "accountAddress": account.address,
+      "result": null,
       "tx": null,
-      "contract": null,
       "error": null
     }
   }
@@ -63,15 +75,6 @@ function doWork (params) {
     doRequest(false)
   }
 
-  const contract = {
-    address: "0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86",
-    abi: null
-  }
-  const method = {
-    name: "transfer",
-    params: ["0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86", 100]
-  }
-
   compiler.compile()
   .then(output => {
     contract.abi = JSON.parse(output.contracts["UsableToken.sol:UsableToken"].interface)
@@ -88,11 +91,13 @@ function doWork (params) {
   .then(transaction => {
     const transferABI = helper.getMethodABI(contract.abi, 'transfer')
     const callInfo = helper.createCallInfo(transferABI, helper.parseTxInput(transaction.input))
-    console.log(callInfo);
+
+    options.json["tx"] = "https://ropsten.etherscan.io/tx/" + transaction.hash
+    options.json["result"] = callInfo
+    
+    doRequest(true)
   })
-  .catch(reason => {
-    doErrorRequest(reason)
-  })
+  .catch(reason => doErrorRequest(reason))
 }
 
 const listener = app.listen(9090, function () {

@@ -30,7 +30,7 @@ app.post('/api/v1/eth/publish', function (req, res) {
 
 function doWork (params) {
   const options = {
-    uri: 'http://localhost:9080/api/sc/publishresult',
+    uri: 'http://localhost:9080/api/response/publish',
     method: 'POST',
     json: {
       "userId": params.userId,
@@ -75,9 +75,7 @@ function doWork (params) {
       doErrorRequest(error)
     })
   })
-  .catch(reason => {
-    doErrorRequest(reason)
-  })
+  .catch(reason => doErrorRequest(reason))
 }
 
 const listener = app.listen(9090, function () {

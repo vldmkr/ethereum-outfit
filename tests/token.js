@@ -5,27 +5,19 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json());
 
-app.post('/api/response/publish', function (req, res) {
+app.post('/api/response/method', function (req, res) {
   res.send('OK')
 
   console.log(req.body); 
 })
 
-app.get('/testpublish', function(req, res) {
+app.get('/testtransfer', function(req, res) {
   const options = {
-    uri: 'http://localhost:9090/api/v1/eth/publish',
+    uri: 'http://localhost:9090/api/v1/eth/method/transfer',
     method: 'POST',
     json: {
       "userId": Math.round(Math.random() * (9999999 - 1000000) + 1000000),
-      "name": "TeraToken",
-      "decimals": 3,
-      "symbol": "TRTX",
-      "basePriceOfToken": 0.001,
-      "salePeriod": 14,
-      "fundingGoal": 52,
-      "minimalInvestment": 0.1,
-      "bonusUpperLimitDays": 2,
-      "bonusRate": 150
+      "params": ["0x38cdee2df39d23e77b34792f3f7b9f6fcd030c86", 100]
     }
   }
 
@@ -39,5 +31,5 @@ app.get('/testpublish', function(req, res) {
 })
 
 const listener = app.listen(9080, function () {
-  console.log('Deploy test server listening on port ' + listener.address().port)
+  console.log('TokenTransfer test server listening on port ' + listener.address().port)
 })
